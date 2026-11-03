@@ -9,7 +9,6 @@ import time
 from collections.abc import AsyncIterator, Sequence
 
 import pandas as pd
-import requests
 
 from vendors.core import Vendor, dataset
 from vendors.core.submodules import import_external
@@ -67,16 +66,7 @@ class DeribitVendor(Vendor):
         if instrument_name:
             res = d.get_last_trades_by_instrument(instrument_name, count=count)
         else:
-            # derbit.get_last_trades_by_currency doesn't pass `kind`, which Deribit
-            # now requires (error 11060 "not_supported_for_coinbase_routed_spot"
-            # without it), so call the endpoint directly until that's fixed upstream.
-            r = requests.get(
-                f"{d.fetch_historical.BASE_URL}/public/get_last_trades_by_currency",
-                params={"currency": currency, "kind": kind, "count": count},
-                timeout=20,
-            )
-            r.raise_for_status()
-            res = r.json().get("result", {})
+            res = d.get_last_trades_by_currency(currency, count=count, kind=kind)
         return pd.DataFrame(res.get("trades", []))
 
     @dataset(key=["currency", "timestamp"])

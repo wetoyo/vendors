@@ -144,9 +144,6 @@ data/                collected data (git-ignored)
 
 ## Notes
 
-* **Deribit trades:** `derbit.get_last_trades_by_currency` doesn't send `kind`,
-  which Deribit now requires (error 11060), so the adapter calls that endpoint
-  directly. Once `derbit` adds the param, the adapter can go back to it.
 * **SEC:** the filing search calls EDGAR full-text search directly instead of
   through `datamule` (same endpoint). Requests are throttled below SEC's
   10 req/s limit. The 13D issuer CIK is read from the XML
