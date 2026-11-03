@@ -2,7 +2,11 @@
 	path = external/derbit
 	url = https://github.com/wetoyo/derbit.git
 	ignore = untracked
+	shallow = true
+	branch = main
 [submodule "external/prediction_market_scraper"]
 	path = external/prediction_market_scraper
 	url = https://github.com/wetoyo/prediction_market_scraper.git
 	ignore = untracked
+	shallow = true
+	branch = main

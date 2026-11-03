@@ -56,6 +56,10 @@ def test_snake_case(raw, expected):
 
 @pytest.mark.parametrize("name", sorted(REGISTRY))
 def test_registered_vendors_are_well_formed(name):
+    from conftest import vendor_missing
+
+    if reason := vendor_missing(name):
+        pytest.skip(reason)
     cls = vendor_class(name)
     assert cls.name == name
     assert cls.datasets(), f"{name} declares no datasets"

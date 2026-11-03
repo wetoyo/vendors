@@ -1,11 +1,13 @@
 """Offline tests: upstream API calls are monkeypatched; parsing/normalization is real."""
 
 import pandas as pd
+import pytest
 
 from vendors import get_vendor
 from vendors.core.submodules import import_external
 
 
+@pytest.mark.vendor("deribit")
 def test_deribit_order_books_use_derbit_cleaner(tmp_path, monkeypatch):
     d = import_external("derbit")
     monkeypatch.setattr(d, "get_order_book", lambda name: {
@@ -18,6 +20,7 @@ def test_deribit_order_books_use_derbit_cleaner(tmp_path, monkeypatch):
     assert len(v.load("order_books")) == 2
 
 
+@pytest.mark.vendor("kalshi")
 def test_kalshi_markets_and_orderbooks(tmp_path, monkeypatch):
     f = import_external("Kalshi.fetch_historical")
     monkeypatch.setattr(f, "fetch_markets", lambda **kw: [
@@ -39,6 +42,7 @@ SAMPLE_13D = b"""<?xml version="1.0"?>
 </edgarSubmission>"""
 
 
+@pytest.mark.vendor("sec")
 def test_sec_filings_download_parse_enrich(tmp_path, monkeypatch):
     from vendors.sec import edgar
     monkeypatch.setattr(edgar, "search_filings", lambda *a, **k: [
@@ -56,6 +60,7 @@ def test_sec_filings_download_parse_enrich(tmp_path, monkeypatch):
     assert (tmp_path / "sec" / "files" / "filings" / "0001-26-000001_primary_doc.xml").exists()
 
 
+@pytest.mark.vendor("yahoo")
 def test_yahoo_prices(tmp_path, monkeypatch):
     import yfinance as yf
     idx = pd.date_range("2026-01-01", periods=3, name="Date")
@@ -69,6 +74,7 @@ def test_yahoo_prices(tmp_path, monkeypatch):
     assert len(v.load("prices")) == 3
 
 
+@pytest.mark.vendor("sec")
 def test_sec_requires_user_agent(monkeypatch):
     import pytest
     from vendors.sec import edgar
@@ -79,6 +85,7 @@ def test_sec_requires_user_agent(monkeypatch):
     assert edgar.user_agent() == "Jane Doe jane@example.com"
 
 
+@pytest.mark.vendor("polymarket")
 def test_polymarket_markets_orderbooks_history(tmp_path, monkeypatch):
     f = import_external("Polymarket.fetch_historical")
     monkeypatch.setattr(f, "fetch_markets", lambda **kw: [{

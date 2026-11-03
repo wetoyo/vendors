@@ -23,6 +23,45 @@ export SEC_USER_AGENT="Your Name you@example.com"   # required for the sec vendo
 Already cloned without submodules? `git submodule update --init --recursive`.
 Pull upstream changes to the submodules with `git submodule update --remote`.
 
+## Working on one vendor (sparse checkout)
+
+**Agents and scripts: don't clone everything.** Check out the framework, the
+vendor(s) you're touching, and only the submodule that vendor needs. Leave out
+`--recurse-submodules`.
+
+```bash
+# 1. Framework only: root files + vendors/core + tests, no submodules, blobs fetched lazily
+git clone --filter=blob:none --sparse https://github.com/wetoyo/vendors.git
+cd vendors
+git sparse-checkout set vendors/core tests
+
+# 2. Add the vendor(s) you need (see the table below)
+git sparse-checkout add vendors/kalshi
+
+# 3. Fetch only that vendor's submodule, shallow
+git submodule update --init --depth 1 external/prediction_market_scraper
+
+# 4. (optional) Trim the submodule to the client you need
+git -C external/prediction_market_scraper sparse-checkout set Clients/Kalshi
+
+# 5. Install with just that vendor's extras
+pip install -e ".[kalshi]" pytest
+python -m pytest     # tests for vendors you didn't check out are skipped, not failed
+```
+
+| Vendor       | `sparse-checkout add`  | Submodule (`submodule update --init --depth 1 ...`) | Optional submodule trim | Extra          |
+|--------------|------------------------|-------------------------------------------|-------------------------|----------------|
+| `deribit`    | `vendors/deribit`      | `external/derbit`                         | (already small)         | `.[deribit]`   |
+| `kalshi`     | `vendors/kalshi`       | `external/prediction_market_scraper`      | `Clients/Kalshi`        | `.[kalshi]`    |
+| `polymarket` | `vendors/polymarket`   | `external/prediction_market_scraper`      | `Clients/Polymarket`    | `.[polymarket]`|
+| `sec`        | `vendors/sec`          | none                                      | n/a                     | none           |
+| `yahoo`      | `vendors/yahoo`        | none                                      | n/a                     | `.[yahoo]`     |
+
+Kalshi and Polymarket share a submodule. To work on both, trim it with
+`sparse-checkout set Clients/Kalshi Clients/Polymarket`. When you add a new
+vendor, `git sparse-checkout add vendors/<name>` before creating its folder,
+or git won't track the new files.
+
 ## Usage
 
 Every vendor works the same way:
@@ -136,7 +175,8 @@ upstream API adds fields, so there's no schema to maintain.
 2. Register it in `vendors/core/registry.py`: `"acme": "vendors.acme:AcmeVendor"`.
 3. If its client lives in its own repo, add it as a submodule under
    `external/` and map its import path in `vendors/core/submodules.py`.
-4. Add an offline test in `tests/test_adapters.py` (monkeypatch the API calls).
+4. Add an offline test in `tests/test_adapters.py` (monkeypatch the API calls)
+   and mark it `@pytest.mark.vendor("<name>")`.
 
 ## Layout
 
@@ -145,6 +185,7 @@ external/            git submodules (upstream code, untouched)
 vendors/core/        base class, storage, registry, submodule importer
 vendors/<vendor>/    one adapter package per vendor
 tests/               offline tests: python -m pytest
+CLAUDE.md            rules for agents working in this repo
 data/                collected data (git-ignored)
 ```
 
