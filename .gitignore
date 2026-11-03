@@ -1,0 +1,9 @@
+# Collected data lives in data/<vendor>/ and is not committed
+data/*
+!data/README.md
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.pytest_cache/

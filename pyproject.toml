@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vendors"
+version = "0.1.0"
+description = "One interface for pulling and storing data from market/filings vendors"
+requires-python = ">=3.10"
+dependencies = ["pandas>=2.0", "requests>=2.31"]
+
+[project.optional-dependencies]
+deribit = ["websockets>=12"]
+kalshi = ["websockets>=12", "cryptography>=42"]
+yahoo = ["yfinance>=0.2.66"]
+sec = []
+parquet = ["pyarrow>=15"]
+all = ["vendors[deribit,kalshi,yahoo,parquet]"]
+dev = ["vendors[all]", "pytest>=8"]
+
+[project.scripts]
+vendors = "vendors.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["vendors*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
