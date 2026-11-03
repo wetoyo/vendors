@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m pytest -q)",
+      "Bash(git submodule status)",
+      "Bash(git submodule status *)",
+      "Bash(git merge-base *)",
+      "Bash(python3 -m vendors list)",
+      "Bash(python3 -m vendors datasets *)"
+    ]
+  }
+}
