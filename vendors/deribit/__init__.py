@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import AsyncIterator, Sequence
+from contextlib import aclosing
 
 import pandas as pd
 
@@ -87,5 +88,6 @@ class DeribitVendor(Vendor):
         self, instruments: Sequence[str], update_types: Sequence[str] | None = None
     ) -> AsyncIterator[dict]:
         """Live ticker/book/trade messages, e.g. update_types=["ticker.100ms", "book.100ms"]."""
-        async for msg in _derbit().stream_instrument_updates(list(instruments), list(update_types or [])):
-            yield msg
+        async with aclosing(_derbit().stream_instrument_updates(list(instruments), list(update_types or []))) as feed:
+            async for msg in feed:
+                yield msg

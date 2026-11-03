@@ -10,7 +10,8 @@ Changes from the original:
     shares-outstanding lookup, rather than assuming ``ciks[0]`` is the issuer;
   * requests are throttled to stay under SEC's 10 req/s fair-access limit;
   * the User-Agent comes from ``$SEC_USER_AGENT`` (SEC requires real contact
-    info) and falls back to the one Funkles-SEC shipped with.
+    info). There is deliberately no fallback: the original hardcoded a
+    personal name/email, and every caller must identify themselves.
 """
 
 from __future__ import annotations
@@ -27,7 +28,6 @@ EFTS_URL = "https://efts.sec.gov/LATEST/search-index"
 ARCHIVES_URL = "https://www.sec.gov/Archives/edgar/data"
 DATA_URL = "https://data.sec.gov"
 
-DEFAULT_USER_AGENT = "weto yo (yonoweto@gmail.com)"
 NS_13D = {"edgar": "http://www.sec.gov/edgar/schedule13D", "com": "http://www.sec.gov/edgar/common"}
 
 _session = requests.Session()
@@ -36,8 +36,18 @@ _last_request = 0.0
 MIN_INTERVAL = 0.12  # seconds between requests (< 10 req/s)
 
 
+class MissingUserAgent(RuntimeError):
+    pass
+
+
 def user_agent() -> str:
-    return os.environ.get("SEC_USER_AGENT", DEFAULT_USER_AGENT)
+    ua = os.environ.get("SEC_USER_AGENT", "").strip()
+    if not ua:
+        raise MissingUserAgent(
+            "SEC requires a User-Agent with your contact info. "
+            'Set it first, e.g. export SEC_USER_AGENT="Your Name you@example.com"'
+        )
+    return ua
 
 
 def _get(url: str, params: dict | None = None, retries: int = 4) -> requests.Response:

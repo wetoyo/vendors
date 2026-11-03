@@ -17,6 +17,7 @@ from .base import Vendor
 REGISTRY: dict[str, str] = {
     "deribit": "vendors.deribit:DeribitVendor",
     "kalshi": "vendors.kalshi:KalshiVendor",
+    "polymarket": "vendors.polymarket:PolymarketVendor",
     "sec": "vendors.sec:SecVendor",
     "yahoo": "vendors.yahoo:YahooVendor",
 }

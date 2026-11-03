@@ -7,6 +7,7 @@ Market/series/order-book/trade listing is public. ``stream()`` needs
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
+from contextlib import aclosing
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -79,5 +80,6 @@ class KalshiVendor(Vendor):
     async def stream(self, market_tickers: Sequence[str]) -> AsyncIterator[dict]:
         """Live orderbook_delta messages (requires Kalshi API credentials)."""
         live = import_external("Kalshi.live_datastream")
-        async for msg in live.stream_orderbook(_tickers(market_tickers)):
-            yield msg
+        async with aclosing(live.stream_orderbook(_tickers(market_tickers))) as feed:
+            async for msg in feed:
+                yield msg

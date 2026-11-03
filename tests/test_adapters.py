@@ -67,3 +67,38 @@ def test_yahoo_prices(tmp_path, monkeypatch):
     assert df["close"].tolist() == [1.0, 2.0, 3.0]  # fill_missing interpolates
     v.collect("prices", tickers="AAPL")
     assert len(v.load("prices")) == 3
+
+
+def test_sec_requires_user_agent(monkeypatch):
+    import pytest
+    from vendors.sec import edgar
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    with pytest.raises(edgar.MissingUserAgent):
+        edgar.user_agent()
+    monkeypatch.setenv("SEC_USER_AGENT", "Jane Doe jane@example.com")
+    assert edgar.user_agent() == "Jane Doe jane@example.com"
+
+
+def test_polymarket_markets_orderbooks_history(tmp_path, monkeypatch):
+    f = import_external("Polymarket.fetch_historical")
+    monkeypatch.setattr(f, "fetch_markets", lambda **kw: [{
+        "id": "1", "question": " Will X happen? ", "active": True, "closed": False,
+        "clobTokenIds": '["111", "222"]', "bestBid": "0.41", "events": [{"big": "nested"}],
+    }])
+    monkeypatch.setattr(f, "fetch_order_book", lambda tok: {"market": "0xabc", "bids": [{"price": "0.4", "size": "5"}], "asks": []})
+
+    class Resp:
+        def raise_for_status(self): pass
+        def json(self): return {"history": [{"t": 1700000000, "p": 0.4}, {"t": 1700003600, "p": 0.45}]}
+    import vendors.polymarket as pm
+    monkeypatch.setattr(pm.requests, "get", lambda *a, **k: Resp())
+
+    v = get_vendor("polymarket", data_dir=tmp_path)
+    m = v.collect("markets")
+    assert (m.raw_title.iloc[0], m.status.iloc[0], m.best_bid.iloc[0]) == ("Will X happen?", "active", 0.41)
+    assert "events" not in m.columns
+    ob = v.collect("orderbooks", token_ids="111,222")
+    assert ob.token_id.tolist() == ["111", "222"] and ob.market.iloc[0] == "0xabc"
+    ph = v.collect("price_history", token_ids=111)  # CLI passes bare numeric ids as int
+    v.collect("price_history", token_ids=["111"])
+    assert ph.token_id.unique().tolist() == ["111"] and len(v.load("price_history")) == 2

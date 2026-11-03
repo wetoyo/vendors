@@ -19,9 +19,9 @@ from . import edgar
 log = logging.getLogger(__name__)
 
 
-def _ciks(value: Sequence[str] | str) -> list[str]:
-    if isinstance(value, str):
-        value = value.split(",")
+def _ciks(value: Sequence[str | int] | str | int) -> list[str]:
+    if isinstance(value, (str, int)):
+        value = str(value).split(",")
     return [str(v).strip().zfill(10) for v in value if str(v).strip()]
 
 

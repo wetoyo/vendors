@@ -7,6 +7,7 @@ vendor storing what it collects in its own folder.
 |-----------|------------------------------------------------------------------------|----------|
 | `deribit` | [`external/derbit`](https://github.com/wetoyo/derbit) (submodule)       | `instruments`, `book_summary`, `order_books`, `trades`, `historical_volatility`, `index_price` + `stream()` |
 | `kalshi`  | [`external/prediction_market_scraper`](https://github.com/wetoyo/prediction_market_scraper) (submodule, `Clients/Kalshi`) | `series`, `markets`, `orderbooks`, `trades` + `stream()` (needs API key) |
+| `polymarket` | [`external/prediction_market_scraper`](https://github.com/wetoyo/prediction_market_scraper) (submodule, `Clients/Polymarket`) | `markets`, `events`, `orderbooks`, `price_history` + `stream()` |
 | `yahoo`   | `vendors/yahoo/scraper.py`, ported from PocketQuant2's `YFinance.py`    | `prices`, `options` |
 | `sec`     | `vendors/sec/edgar.py`, ported from Funkles-SEC's `scrape.py`           | `filings`, `shares_outstanding`, `company_filings` |
 
@@ -15,8 +16,8 @@ vendor storing what it collects in its own folder.
 ```bash
 git clone --recurse-submodules https://github.com/wetoyo/vendors.git
 cd vendors
-pip install -e ".[all]"          # or pick extras: .[deribit], .[kalshi], .[yahoo]
-export SEC_USER_AGENT="Your Name you@example.com"   # SEC requires real contact info
+pip install -e ".[all]"          # or pick extras: .[deribit], .[kalshi], .[polymarket], .[yahoo]
+export SEC_USER_AGENT="Your Name you@example.com"   # required for the sec vendor
 ```
 
 Already cloned without submodules? `git submodule update --init --recursive`.
@@ -36,8 +37,11 @@ df = kalshi.collect("markets", series_ticker="KXFED")  # pull + store in data/ka
 df = kalshi.load("markets", status="active")        # read back what's stored
 kalshi.storage.export("markets", fmt="parquet")     # -> data/kalshi/exports/markets.parquet
 
-async for msg in get_vendor("deribit").stream(["BTC-PERPETUAL"], ["ticker.100ms"]):
-    ...
+# Streams: wrap in aclosing() so breaking out of the loop closes the websocket cleanly
+from contextlib import aclosing
+async with aclosing(get_vendor("deribit").stream(["BTC-PERPETUAL"], ["ticker.100ms"])) as feed:
+    async for msg in feed:
+        ...
 ```
 
 Same thing from the shell:
@@ -48,6 +52,8 @@ vendors datasets deribit
 vendors fetch   deribit index_price index_name=eth_usd
 vendors collect deribit book_summary currency=ETH
 vendors collect yahoo   prices tickers=AAPL,MSFT start=2026-01-01
+vendors collect polymarket markets query=bitcoin
+vendors collect polymarket price_history token_ids=<clob token id> interval=1w
 vendors collect sec     filings form_type="SCHEDULE 13D" days=3
 vendors load    sec     filings --rows 20
 vendors export  yahoo   prices --format csv
@@ -144,6 +150,14 @@ data/                collected data (git-ignored)
 
 ## Notes
 
+* **SEC identity:** SEC rejects requests without a User-Agent naming who you are.
+  There is no built-in default (the original Funkles-SEC code hardcoded a
+  personal name/email), so set `SEC_USER_AGENT` yourself; the vendor raises
+  `MissingUserAgent` if it's unset.
+* **Polymarket:** order-book and price datasets take CLOB *token* ids. Each
+  market's `clob_token_ids` column lists them, one per outcome (`[Yes, No]`).
+  `price_history` calls CLOB `/prices-history` directly because the submodule
+  client has no history endpoint yet.
 * **SEC:** the filing search calls EDGAR full-text search directly instead of
   through `datamule` (same endpoint). Requests are throttled below SEC's
   10 req/s limit. The 13D issuer CIK is read from the XML
