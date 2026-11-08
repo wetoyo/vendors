@@ -2,9 +2,6 @@
 
 import pytest
 
-from vendors.core.registry import REGISTRY
-
-REGISTRY.setdefault("open_meteo", "vendors.open_meteo:OpenMeteoVendor")  # no-op once registered
 
 from vendors import get_vendor  # noqa: E402
 

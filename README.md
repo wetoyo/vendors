@@ -10,6 +10,29 @@ vendor storing what it collects in its own folder.
 | `polymarket` | [`external/prediction_market_scraper`](https://github.com/wetoyo/prediction_market_scraper) (submodule, `Clients/Polymarket`) | `markets`, `events`, `orderbooks`, `price_history` + `stream()` |
 | `yahoo`   | `vendors/yahoo/scraper.py`, ported from PocketQuant2's `YFinance.py`    | `prices`, `options` |
 | `sec`     | `vendors/sec/edgar.py`, ported from Funkles-SEC's `scrape.py`           | `filings`, `shares_outstanding`, `company_filings` |
+| **Weather** | | |
+| `open_meteo` | Open-Meteo forecast, ERA5 archive and geocoding (no key)             | `forecast`, `historical`, `geocode` |
+| `nws`     | NOAA National Weather Service, api.weather.gov (no key)                | `forecast`, `alerts`, `observations`, `stations` |
+| **Satellite** | | |
+| `copernicus` | Copernicus Data Space STAC: Sentinel-1 GRD SAR, Sentinel-2 L2A    | `scenes`, `aois`, `download` |
+| `planetary_computer` | Microsoft Planetary Computer STAC, signed asset URLs (no key) | `scenes`, `collections`, `download` |
+| `earth_search` | Element84 Earth Search STAC on AWS (no key)                      | `scenes`, `latest`, `download` |
+| `nasa_firms` | NASA FIRMS VIIRS/MODIS fire and flare hotspots                     | `hotspots`, `site_scan`, `country`, `data_availability` |
+| **Energy, shipping, flights** | | |
+| `eia`     | US Energy Information Administration API v2                            | `series`, `weekly_petroleum`, `routes` |
+| `aisstream` | aisstream.io live AIS vessel feed                                    | `positions`, `vessels` + `stream()` |
+| `opensky` | OpenSky Network flight state vectors                                   | `states`, `flights`, `arrivals`, `departures` |
+| **News** | | |
+| `rss`     | 26 preset finance, energy, central-bank, macro and crypto feeds       | `items`, `feeds` |
+| **Social** | | |
+| `reddit`  | Reddit listings, search and comments (OAuth recommended)               | `posts`, `search`, `comments`, `ticker_mentions` |
+| `bluesky` | Bluesky AT Protocol search and feeds, Jetstream firehose               | `search`, `author_feed` + `stream()` |
+| `hackernews` | Algolia HN search and the official Firebase API (no key)           | `search`, `top`, `comments` |
+| `stocktwits` | StockTwits public API (no key)                                     | `messages`, `sentiment`, `trending` |
+| **Macro and markets** | | |
+| `fred`    | St. Louis Fed FRED                                                     | `observations`, `series_info`, `search`, `release_dates` |
+| `cftc`    | CFTC Commitments of Traders (legacy, disaggregated, TFF)               | `cot`, `markets` |
+| `coingecko` | CoinGecko API v3 (no key needed)                                     | `markets`, `market_chart`, `ohlc`, `trending`, `global_metrics` |
 
 ## Setup
 
@@ -19,6 +42,23 @@ cd vendors
 pip install -e ".[all]"          # or pick extras: .[deribit], .[kalshi], .[polymarket], .[yahoo]
 export SEC_USER_AGENT="Your Name you@example.com"   # required for the sec vendor
 ```
+
+API keys, all read from env vars. Vendors not listed need nothing.
+
+| Vendor | Env vars | Required? |
+|--------|----------|-----------|
+| `eia` | `EIA_API_KEY` | yes (free) |
+| `fred` | `FRED_API_KEY` | yes (free) |
+| `nasa_firms` | `FIRMS_MAP_KEY` | yes (free) |
+| `aisstream` | `AISSTREAM_API_KEY` | yes (free) |
+| `copernicus` | `CDSE_USERNAME`, `CDSE_PASSWORD` | only for `download` |
+| `opensky` | `OPENSKY_CLIENT_ID`, `OPENSKY_CLIENT_SECRET` | only for `flights`/`arrivals`/`departures` |
+| `reddit` | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` | in practice yes (anonymous JSON gets 403) |
+| `bluesky` | `BSKY_HANDLE`, `BSKY_APP_PASSWORD` | no; anonymous search returns one page per term |
+| `planetary_computer` | `PC_SDK_SUBSCRIPTION_KEY` | no; raises rate limits |
+| `coingecko` | `COINGECKO_API_KEY`, `COINGECKO_PRO=1` | no |
+| `cftc` | `SOCRATA_APP_TOKEN` | no |
+| `nws`, `open_meteo`, `stocktwits`, `rss` | `NWS_USER_AGENT`, `OPEN_METEO_USER_AGENT`, `STOCKTWITS_USER_AGENT`, `RSS_USER_AGENT` | no; override the User-Agent |
 
 Already cloned without submodules? `git submodule update --init --recursive`.
 Pull upstream changes to the submodules with `git submodule update --remote`.
@@ -56,6 +96,12 @@ python -m pytest     # tests for vendors you didn't check out are skipped, not f
 | `polymarket` | `vendors/polymarket`   | `external/prediction_market_scraper`      | `Clients/Polymarket`    | `.[polymarket]`|
 | `sec`        | `vendors/sec`          | none                                      | n/a                     | none           |
 | `yahoo`      | `vendors/yahoo`        | none                                      | n/a                     | `.[yahoo]`     |
+| `aisstream`  | `vendors/aisstream`    | none                                      | n/a                     | `.[aisstream]` |
+| `bluesky`    | `vendors/bluesky`      | none                                      | n/a                     | `.[bluesky]` (only for `stream()`) |
+| every other new vendor | `vendors/<name>` | none                               | n/a                     | none           |
+
+The satellite vendors, `nasa_firms` and `aisstream` share the preset sites in
+`vendors/core/aoi.py`, which comes with `vendors/core`.
 
 Kalshi and Polymarket share a submodule. To work on both, trim it with
 `sparse-checkout set Clients/Kalshi Clients/Polymarket`. When you add a new
@@ -94,6 +140,16 @@ vendors collect yahoo   prices tickers=AAPL,MSFT start=2026-01-01
 vendors collect polymarket markets query=bitcoin
 vendors collect polymarket price_history token_ids=<clob token id> interval=1w
 vendors collect sec     filings form_type="SCHEDULE 13D" days=3
+vendors collect open_meteo forecast location=houston days=7
+vendors collect copernicus scenes aoi=cushing preset=oil_tanks_sar
+vendors collect earth_search latest preset=oil_tanks_optical
+vendors collect nasa_firms site_scan days=2
+vendors collect eia     series preset=crude_stocks_cushing start=2024-01-01
+vendors collect aisstream vessels aoi=fujairah seconds=300
+vendors collect rss     items group=energy
+vendors collect reddit  posts group=stocks sort=new limit=200
+vendors collect cftc    cot preset=wti start=2025-01-01
+vendors collect fred    observations preset=rates
 vendors load    sec     filings --rows 20
 vendors export  yahoo   prices --format csv
 ```
@@ -203,4 +259,24 @@ data/                collected data (git-ignored)
   through `datamule` (same endpoint). Requests are throttled below SEC's
   10 req/s limit. The 13D issuer CIK is read from the XML
   (`issuerCIK`), not taken as the first CIK on the hit.
+* **Watching oil storage:** `vendors/core/aoi.py` presets 11 sites (Cushing,
+  Houston Ship Channel, Corpus Christi, LOOP, Ras Tanura, Fujairah, Rotterdam,
+  Jurong, Ningbo-Zhoushan, Qingdao, Saldanha Bay). Pass `aoi=<name>` or your own
+  `bbox=min_lon,min_lat,max_lon,max_lat`. The satellite vendors take
+  `preset=oil_tanks_sar` (Sentinel-1, sees through cloud, shows floating-roof
+  shadows) or `preset=oil_tanks_optical` (Sentinel-2, cloud < 20%). Cross-check
+  with `nasa_firms` (flaring), `aisstream` (tankers at the terminal) and `eia`
+  (weekly Cushing and US crude stocks).
+* **Satellite downloads:** `earth_search` serves Sentinel-2 over https for free;
+  its Landsat and Sentinel-1 assets are requester-pays S3 and need AWS
+  credentials. `planetary_computer` hrefs are SAS-signed and expire after about a
+  day, so re-run `scenes` for fresh ones.
+* **Reddit:** anonymous `*.json` is blocked (403). Create a "script" app at
+  reddit.com/prefs/apps and set `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`.
+* **Bluesky:** `search` splits a query on ` OR ` and runs one search per term,
+  since `searchPosts` treats every word as required; `limit` is per term.
+* **Not yet run against the live API (no key here):** `eia`, `fred`,
+  `nasa_firms`, `aisstream`, the `copernicus` download and the OpenSky/Reddit
+  auth paths. They're built from the docs and tested offline. In particular, check
+  the EIA `refinery_utilization`, `crude_production` and `henry_hub_spot` routes.
 * **Kalshi streaming** needs `KALSHI_API_KEY_ID` and `KALSHI_PRIVATE_KEY_PATH`.

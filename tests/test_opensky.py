@@ -3,10 +3,7 @@
 import pytest
 
 from vendors import get_vendor
-from vendors.core.registry import REGISTRY
 
-# Until the registry line is merged, register at runtime so get_vendor works.
-REGISTRY.setdefault("opensky", "vendors.opensky:OpenSkyVendor")
 
 STATE = ["39cc8a", "CRL775  ", "France", 1794115245, 1794115245, 9.2116, 45.7214, 11582.4,
          False, 227.79, 293.84, 0, None, 11666.22, "5506", False, 0]

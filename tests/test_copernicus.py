@@ -4,10 +4,8 @@ import json
 
 import pytest
 
-from vendors.core import REGISTRY, get_vendor
+from vendors.core import get_vendor
 
-# Registered here too so the test runs before/without the registry.py line.
-REGISTRY.setdefault("copernicus", "vendors.copernicus:CopernicusVendor")
 
 pytestmark = pytest.mark.vendor("copernicus")
 

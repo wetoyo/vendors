@@ -132,7 +132,7 @@ class CftcVendor(Vendor):
             df[net] = df[long_col] - df[short_col]
         return df
 
-    @dataset(key=[CODE])
+    @dataset(key=[CODE, "report"])
     def markets(self, report: str = "disaggregated") -> pd.DataFrame:
         """Markets and contract codes in the latest report."""
         dataset_id = _report(report)[0]

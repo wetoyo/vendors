@@ -2,10 +2,6 @@
 
 import pytest
 
-from vendors.core.registry import REGISTRY
-
-REGISTRY.setdefault("hackernews", "vendors.hackernews:HackerNewsVendor")
-
 
 def _vendor(tmp_path, monkeypatch, responder):
     import vendors.hackernews as hn

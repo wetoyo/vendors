@@ -2,10 +2,8 @@
 
 import pytest
 
-from vendors.core import REGISTRY, get_vendor
+from vendors.core import get_vendor
 
-# Registered centrally on merge; this keeps the tests runnable on the branch alone.
-REGISTRY.setdefault("stocktwits", "vendors.stocktwits:StocktwitsVendor")
 
 pytestmark = pytest.mark.vendor("stocktwits")
 

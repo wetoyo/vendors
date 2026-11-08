@@ -4,10 +4,8 @@ import json
 
 import pytest
 
-from vendors.core import registry
 from vendors.core.aoi import AOIS, resolve_bbox
 
-registry.REGISTRY.setdefault("planetary_computer", "vendors.planetary_computer:PlanetaryComputerVendor")
 
 pytestmark = pytest.mark.vendor("planetary_computer")
 

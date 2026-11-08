@@ -2,10 +2,6 @@
 
 import pytest
 
-from vendors.core import REGISTRY
-
-# Lets these tests run before the registry line is merged in.
-REGISTRY.setdefault("reddit", "vendors.reddit:RedditVendor")
 
 from vendors import get_vendor  # noqa: E402
 

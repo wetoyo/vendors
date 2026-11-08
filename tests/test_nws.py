@@ -2,9 +2,8 @@
 
 import pytest
 
-from vendors.core import REGISTRY, get_vendor
+from vendors.core import get_vendor
 
-REGISTRY.setdefault("nws", "vendors.nws:NwsVendor")  # no-op once registered
 
 POINT = {"properties": {
     "gridId": "OKX", "gridX": 34, "gridY": 45,
@@ -71,7 +70,9 @@ def test_nws_forecast(tmp_path, calls):
     assert df["probability_of_precipitation"].tolist()[0] == 10
     assert df["probability_of_precipitation_unit"].iloc[0] == "percent"
     v.collect("forecast", latitude=40.7829, longitude=-73.9654)
-    assert len(v.load("forecast")) == 2  # upserted on grid + start_time
+    assert len(v.load("forecast")) == 4  # hourly and 12-hour periods kept apart
+    v.collect("forecast", latitude=40.7829, longitude=-73.9654)
+    assert len(v.load("forecast")) == 4  # re-collect upserts
 
 
 @pytest.mark.vendor("nws")

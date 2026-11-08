@@ -2,10 +2,6 @@
 
 import pytest
 
-from vendors.core import REGISTRY
-
-# Until the main registry lists it, register locally so the vendor marker resolves.
-REGISTRY.setdefault("nasa_firms", "vendors.nasa_firms:NasaFirmsVendor")
 
 from vendors import get_vendor  # noqa: E402
 from vendors.nasa_firms import MissingMapKey  # noqa: E402

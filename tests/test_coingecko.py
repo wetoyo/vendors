@@ -2,10 +2,6 @@
 
 import pytest
 
-from vendors.core import REGISTRY
-
-# Until the registry line lands in vendors/core/registry.py.
-REGISTRY.setdefault("coingecko", "vendors.coingecko:CoinGeckoVendor")
 
 from vendors import get_vendor  # noqa: E402
 

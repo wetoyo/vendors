@@ -6,9 +6,6 @@ import pytest
 
 from vendors.core import registry
 
-# No-op once the vendor is in registry.py; lets the vendor marker resolve before that.
-registry.REGISTRY.setdefault("earth_search", "vendors.earth_search:EarthSearchVendor")
-
 
 def _feat(item_id, collection="sentinel-2-l2a", cloud=5.0, dt="2026-11-04T17:00:00Z", **assets):
     props = {"datetime": dt, "platform": "sentinel-2b", "grid:code": "MGRS-14SPE"}

@@ -58,7 +58,7 @@ class NwsVendor(Vendor):
     name = "nws"
     description = "NOAA National Weather Service forecasts, alerts and station observations"
 
-    @dataset(key=["grid_id", "grid_x", "grid_y", "start_time"])
+    @dataset(key=["grid_id", "grid_x", "grid_y", "hourly", "start_time"])
     def forecast(self, latitude: float, longitude: float, hourly: bool = False) -> pd.DataFrame:
         """Forecast periods for a lat/lon (12-hour, or hourly)."""
         pt = get(f"/points/{float(latitude):.4f},{float(longitude):.4f}")["properties"]

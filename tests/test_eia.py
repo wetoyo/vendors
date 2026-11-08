@@ -2,10 +2,6 @@
 
 import pytest
 
-from vendors.core import registry
-
-# Until the main branch registers eia, make get_vendor("eia") work for these tests.
-registry.REGISTRY.setdefault("eia", "vendors.eia:EiaVendor")
 
 from vendors import get_vendor  # noqa: E402
 

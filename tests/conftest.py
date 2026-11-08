@@ -19,6 +19,7 @@ _PROBES = {
     "polymarket": lambda: import_external("Polymarket.fetch_historical"),
     "yahoo": lambda: importlib.import_module("yfinance"),
     "sec": lambda: None,
+    "aisstream": lambda: importlib.import_module("websockets"),
 }
 
 

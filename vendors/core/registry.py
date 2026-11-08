@@ -15,10 +15,27 @@ from pathlib import Path
 from .base import Vendor
 
 REGISTRY: dict[str, str] = {
+    "aisstream": "vendors.aisstream:AisstreamVendor",
+    "bluesky": "vendors.bluesky:BlueskyVendor",
+    "cftc": "vendors.cftc:CftcVendor",
+    "coingecko": "vendors.coingecko:CoinGeckoVendor",
+    "copernicus": "vendors.copernicus:CopernicusVendor",
     "deribit": "vendors.deribit:DeribitVendor",
+    "earth_search": "vendors.earth_search:EarthSearchVendor",
+    "eia": "vendors.eia:EiaVendor",
+    "fred": "vendors.fred:FredVendor",
+    "hackernews": "vendors.hackernews:HackerNewsVendor",
     "kalshi": "vendors.kalshi:KalshiVendor",
+    "nasa_firms": "vendors.nasa_firms:NasaFirmsVendor",
+    "nws": "vendors.nws:NwsVendor",
+    "open_meteo": "vendors.open_meteo:OpenMeteoVendor",
+    "opensky": "vendors.opensky:OpenSkyVendor",
+    "planetary_computer": "vendors.planetary_computer:PlanetaryComputerVendor",
     "polymarket": "vendors.polymarket:PolymarketVendor",
+    "reddit": "vendors.reddit:RedditVendor",
+    "rss": "vendors.rss:RssVendor",
     "sec": "vendors.sec:SecVendor",
+    "stocktwits": "vendors.stocktwits:StocktwitsVendor",
     "yahoo": "vendors.yahoo:YahooVendor",
 }
 
