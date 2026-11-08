@@ -8,6 +8,7 @@ satellite oil-tank estimates.
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Mapping, Sequence
 
 import pandas as pd
@@ -119,6 +120,20 @@ def _normalize(rows: list[dict], route: str) -> pd.DataFrame:
     return df[front + [c for c in df.columns if c not in front]]
 
 
+HISTORY_URL = "https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx"
+_ROW = re.compile(r"<td class='B6'>(?:&nbsp;)*\s*(\d{4})-(\w{3})</td>(.*?)</tr>", re.S)
+_CELL = re.compile(r"<td class='B5'>(\d{2})/(\d{2})&nbsp;</td>\s*<td class='B3'>([\d,.]+)")
+
+
+def parse_weekly_history(html: str) -> list[dict]:
+    """Rows of (period, value) from an EIA weekly history page."""
+    out = []
+    for year, _, cells in _ROW.findall(html):
+        for mm, dd, val in _CELL.findall(cells):
+            out.append({"period": f"{year}-{mm}-{dd}", "value": float(val.replace(",", ""))})
+    return out
+
+
 class EiaVendor(Vendor):
     name = "eia"
     description = "US Energy Information Administration API v2 (petroleum, natural gas, ...)"
@@ -158,6 +173,23 @@ class EiaVendor(Vendor):
                 df.insert(0, "preset", df["series"].map(ids))
                 frames.append(df)
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+    @dataset(key=["series", "period"])
+    def history(self, series: str = "W_EPC0_SAX_YCUOK_MBBL", preset: str | None = None) -> pd.DataFrame:
+        """Full weekly history of one petroleum series from eia.gov's public tables (no key)."""
+        if preset:
+            if preset not in PRESETS:
+                raise KeyError(f"Unknown EIA preset {preset!r}; available: {sorted(PRESETS)}")
+            series = PRESETS[preset][1]
+        r = requests.get(HISTORY_URL, params={"n": "PET", "s": series, "f": "W"},
+                         headers={"User-Agent": "Mozilla/5.0 (compatible; vendors-client/0.1)"}, timeout=60)
+        r.raise_for_status()
+        df = pd.DataFrame(parse_weekly_history(r.text))
+        if df.empty:
+            raise RuntimeError(f"no weekly history found for {series!r} (monthly-only series aren't supported)")
+        df.insert(0, "series", series)
+        df["source"] = "eia.gov history table"
+        return df
 
     @dataset(key=["route", "id"])
     def routes(self, route: str = "") -> pd.DataFrame:

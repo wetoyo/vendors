@@ -129,3 +129,31 @@ def test_eia_api_error_and_missing_key(tmp_path, calls, monkeypatch):
     with pytest.raises(eia.MissingApiKey, match="EIA_API_KEY"):
         get_vendor("eia", data_dir=tmp_path).fetch("series", preset="crude_stocks_us")
     assert len(calls) == n  # no request made without a key
+
+
+@pytest.mark.vendor("eia")
+def test_eia_history_parses_public_table(tmp_path, monkeypatch):
+    html = """<tr>
+ <td class='B6'>&nbsp;&nbsp;2026-Jan</td>
+ <td class='B5'>01/02&nbsp;</td>
+ <td class='B3'>22,840&nbsp;&nbsp;&nbsp;</td>
+ <td class='B5'>01/09&nbsp;</td>
+ <td class='B3'>23,585&nbsp;&nbsp;&nbsp;</td>
+ <td class='B5'>&nbsp;</td>
+ <td class='B3'>&nbsp;&nbsp;&nbsp;</td>
+ </tr>"""
+
+    class R:
+        text = html
+
+        def raise_for_status(self):
+            pass
+
+    import vendors.eia as eia
+
+    monkeypatch.delenv("EIA_API_KEY", raising=False)  # no key needed
+    monkeypatch.setattr(eia.requests, "get", lambda url, params=None, **kw: R())
+    df = get_vendor("eia", data_dir=tmp_path).collect("history", preset="crude_stocks_cushing")
+    assert df["period"].tolist() == ["2026-01-02", "2026-01-09"]
+    assert df["value"].tolist() == [22840.0, 23585.0]
+    assert df["series"].iloc[0] == "W_EPC0_SAX_YCUOK_MBBL"

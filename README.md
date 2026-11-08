@@ -18,8 +18,9 @@ vendor storing what it collects in its own folder.
 | `planetary_computer` | Microsoft Planetary Computer STAC, signed asset URLs (no key) | `scenes`, `collections`, `download` |
 | `earth_search` | Element84 Earth Search STAC on AWS (no key)                      | `scenes`, `latest`, `download` |
 | `nasa_firms` | NASA FIRMS VIIRS/MODIS fire and flare hotspots                     | `hotspots`, `site_scan`, `country`, `data_availability` |
+| `tank_watch` | Oil-tank fill from Sentinel-2 floating-roof shadows (OSM tanks + Earth Search) | `tanks`, `fill_levels`, `site_fill` |
 | **Energy, shipping, flights** | | |
-| `eia`     | US Energy Information Administration API v2                            | `series`, `weekly_petroleum`, `routes` |
+| `eia`     | US Energy Information Administration API v2; eia.gov history tables  | `series`, `weekly_petroleum`, `routes`, `history` (no key) |
 | `aisstream` | aisstream.io live AIS vessel feed                                    | `positions`, `vessels` + `stream()` |
 | `opensky` | OpenSky Network flight state vectors                                   | `states`, `flights`, `arrivals`, `departures` |
 | **News** | | |
@@ -99,6 +100,7 @@ python -m pytest     # tests for vendors you didn't check out are skipped, not f
 | `yahoo`      | `vendors/yahoo`        | none                                      | n/a                     | `.[yahoo]`     |
 | `aisstream`  | `vendors/aisstream`    | none                                      | n/a                     | `.[aisstream]` |
 | `bluesky`    | `vendors/bluesky`      | none                                      | n/a                     | `.[bluesky]` (only for `stream()`) |
+| `tank_watch` | `vendors/tank_watch vendors/earth_search` | none                     | n/a                     | `.[tank_watch]` |
 | every other new vendor | `vendors/<name>` | none                               | n/a                     | none           |
 
 The satellite vendors, `nasa_firms` and `aisstream` share the preset sites in
@@ -236,6 +238,35 @@ upstream API adds fields, so there's no schema to maintain.
 4. Add an offline test in `tests/test_adapters.py` (monkeypatch the API calls)
    and mark it `@pytest.mark.vendor("<name>")`.
 
+## Cushing tank fill
+
+`tank_watch` estimates how full Cushing's floating-roof crude tanks are from
+free 10 m Sentinel-2 imagery. When a tank is low, its wall shades the sunken
+roof, and the length of that shadow, with the sun angle, gives the roof depth.
+
+```bash
+pip install -e ".[tank_watch]"
+vendors collect tank_watch tanks aoi=cushing                       # 294 OSM tanks >= 40 m, ~84M bbl shell
+vendors collect tank_watch fill_levels aoi=cushing start=2019-01-01  # one row per tank per clear scene
+vendors collect tank_watch site_fill aoi=cushing                   # capacity-weighted fill + est. barrels per date
+vendors collect eia history preset=crude_stocks_cushing            # EIA weekly stocks to compare (no key)
+```
+
+* **Model.** Pixels wholly inside each tank are fitted against the predicted
+  shadow for 41 fill levels; the shadow/lit brightness ratio is fitted per
+  scene. Edge blur from the dark wall looks like a 1.75 m shadow at any sun
+  angle, so that is subtracted. The 1.75 m was chosen so the estimates don't
+  depend on sun elevation, without reference to EIA.
+* **Accuracy vs EIA (2019-2026, 298 scene dates).** Correlation 0.55 per
+  scene, 0.62 on monthly means, mean absolute error 8M bbl, bias -0.3M bbl.
+  Annual means land within 2-4M bbl except 2020, when the satellite misses
+  much of the COVID build (39 vs 51M bbl). Individual scenes are noisy:
+  average several.
+* **Limits.** 10 m pixels make a 61 m tank about 6 pixels across, so the top
+  ~10% of fill can't be told from full. Tank height is assumed to be 14.6 m (48
+  ft) for every tank. Fixed-roof tanks in the OSM set add noise. EIA's figure
+  also counts storage this site doesn't cover.
+
 ## Layout
 
 ```
@@ -277,7 +308,8 @@ data/                collected data (git-ignored)
   reddit.com/prefs/apps and set `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`.
 * **Bluesky:** `search` splits a query on ` OR ` and runs one search per term,
   since `searchPosts` treats every word as required; `limit` is per term.
-* **Not yet run against the live API (no key here):** `eia`, `fred`,
+* **Tank fill (`tank_watch`):** see "Cushing tank fill" below.
+* **Not yet run against the live API (no key here):** `eia` (except `history`), `fred`,
   `nasa_firms`, `aisstream`, the `copernicus` download and the OpenSky/Reddit
   auth paths. They're built from the docs and tested offline. In particular, check
   the EIA `refinery_utilization`, `crude_production` and `henry_hub_spot` routes.

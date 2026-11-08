@@ -20,6 +20,7 @@ _PROBES = {
     "yahoo": lambda: importlib.import_module("yfinance"),
     "sec": lambda: None,
     "aisstream": lambda: importlib.import_module("websockets"),
+    "tank_watch": lambda: importlib.import_module("numpy"),
 }
 
 

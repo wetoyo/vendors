@@ -37,6 +37,7 @@ REGISTRY: dict[str, str] = {
     "rss": "vendors.rss:RssVendor",
     "sec": "vendors.sec:SecVendor",
     "stocktwits": "vendors.stocktwits:StocktwitsVendor",
+    "tank_watch": "vendors.tank_watch:TankWatchVendor",
     "yahoo": "vendors.yahoo:YahooVendor",
 }
 
