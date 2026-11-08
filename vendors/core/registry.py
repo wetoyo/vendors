@@ -24,6 +24,7 @@ REGISTRY: dict[str, str] = {
     "earth_search": "vendors.earth_search:EarthSearchVendor",
     "eia": "vendors.eia:EiaVendor",
     "fred": "vendors.fred:FredVendor",
+    "gdelt": "vendors.gdelt:GdeltVendor",
     "hackernews": "vendors.hackernews:HackerNewsVendor",
     "kalshi": "vendors.kalshi:KalshiVendor",
     "nasa_firms": "vendors.nasa_firms:NasaFirmsVendor",

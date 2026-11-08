@@ -2,13 +2,12 @@
 
 import pytest
 
-from vendors.core.registry import REGISTRY
 
 gdelt = pytest.importorskip("vendors.gdelt")
 from vendors.gdelt import client  # noqa: E402
 
 # The marker needs a registry entry; skip it until the vendor is registered.
-pytestmark = [pytest.mark.vendor("gdelt")] if "gdelt" in REGISTRY else []
+pytestmark = pytest.mark.vendor("gdelt")
 
 
 def _fake(responses, calls):

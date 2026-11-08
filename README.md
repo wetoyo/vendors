@@ -23,6 +23,7 @@ vendor storing what it collects in its own folder.
 | `aisstream` | aisstream.io live AIS vessel feed                                    | `positions`, `vessels` + `stream()` |
 | `opensky` | OpenSky Network flight state vectors                                   | `states`, `flights`, `arrivals`, `departures` |
 | **News** | | |
+| `gdelt`   | GDELT DOC 2.0 article search, volume/tone timelines (no key)          | `articles`, `timeline`, `tone` |
 | `rss`     | 26 preset finance, energy, central-bank, macro and crypto feeds       | `items`, `feeds` |
 | **Social** | | |
 | `reddit`  | Reddit listings, search and comments (OAuth recommended)               | `posts`, `search`, `comments`, `ticker_mentions` |
@@ -147,6 +148,7 @@ vendors collect nasa_firms site_scan days=2
 vendors collect eia     series preset=crude_stocks_cushing start=2024-01-01
 vendors collect aisstream vessels aoi=fujairah seconds=300
 vendors collect rss     items group=energy
+vendors collect gdelt   articles preset=oil max_records=100
 vendors collect reddit  posts group=stocks sort=new limit=200
 vendors collect cftc    cot preset=wti start=2025-01-01
 vendors collect fred    observations preset=rates
