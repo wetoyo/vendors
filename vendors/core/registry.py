@@ -23,6 +23,7 @@ REGISTRY: dict[str, str] = {
     "deribit": "vendors.deribit:DeribitVendor",
     "earth_search": "vendors.earth_search:EarthSearchVendor",
     "eia": "vendors.eia:EiaVendor",
+    "fama_french": "vendors.fama_french:FamaFrenchVendor",
     "fred": "vendors.fred:FredVendor",
     "gdelt": "vendors.gdelt:GdeltVendor",
     "hackernews": "vendors.hackernews:HackerNewsVendor",

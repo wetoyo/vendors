@@ -86,4 +86,23 @@ def test_missing_api_key(tmp_path, monkeypatch):
     monkeypatch.delenv("FRED_API_KEY", raising=False)
     monkeypatch.setattr(fred_mod.requests, "get", lambda *a, **k: pytest.fail("no request without a key"))
     with pytest.raises(fred_mod.MissingApiKey, match="FRED_API_KEY"):
-        fred_mod.FredVendor(data_dir=tmp_path).fetch("observations")
+        fred_mod.FredVendor(data_dir=tmp_path).fetch("series_info", series_ids="UNRATE")
+
+
+
+def test_fred_keyless_csv_fallback(tmp_path, monkeypatch):
+    import vendors.fred as fred
+    from vendors import get_vendor
+    import pandas as pd
+    monkeypatch.delenv("FRED_API_KEY", raising=False)
+
+    class CsvResp:
+        text = "observation_date,UNRATE\n2026-08-01,4.3\n2026-09-01,.\n"
+        def raise_for_status(self): pass
+    monkeypatch.setattr(fred.requests, "get", lambda *a, **k: CsvResp())
+
+    v = get_vendor("fred", data_dir=tmp_path)
+    df = v.collect("observations", series_ids="UNRATE")
+    assert df.columns.tolist()[:3] == ["series_id", "date", "value"]
+    assert df.value.iloc[0] == 4.3 and pd.isna(df.value.iloc[1])
+    assert len(v.load("observations", series_id="UNRATE")) == 2

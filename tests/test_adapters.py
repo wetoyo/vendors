@@ -109,3 +109,23 @@ def test_polymarket_markets_orderbooks_history(tmp_path, monkeypatch):
     ph = v.collect("price_history", token_ids=111)  # CLI passes bare numeric ids as int
     v.collect("price_history", token_ids=["111"])
     assert ph.token_id.unique().tolist() == ["111"] and len(v.load("price_history")) == 2
+
+
+FF_SAMPLE = (
+    "This file was created using the 202609 CRSP database.\r\r\n\r\r\n"
+    ",Mkt-RF,SMB,HML,RF\r\r\n192607,   2.89,  -2.42,  -2.75,   0.22\r\r\n"
+    "192608,   2.64,  -1.44,   4.13,   0.25\r\r\n\r\r\n"
+    " Annual Factors: January-December \r\r\n,Mkt-RF,SMB,HML,RF\r\r\n  1927,  29.47,  -2.04,  -3.54,   3.12\r\r\n"
+)
+
+
+@pytest.mark.vendor("fama_french")
+def test_fama_french_monthly_factors(tmp_path, monkeypatch):
+    import vendors.fama_french as ff
+    monkeypatch.setattr(ff, "download", lambda file: FF_SAMPLE)
+
+    v = get_vendor("fama_french", data_dir=tmp_path)
+    df = v.collect("factors")
+    assert df.date.tolist() == ["1926-07-31", "1926-08-31"]  # annual block skipped
+    assert df.mkt_rf.iloc[0] == pytest.approx(0.0289) and df.mkt.iloc[0] == pytest.approx(0.0311)
+    assert len(v.load("factors", frequency="monthly")) == 2

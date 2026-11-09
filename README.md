@@ -33,6 +33,7 @@ vendor storing what it collects in its own folder.
 | `stocktwits` | StockTwits public API (no key)                                     | `messages`, `sentiment`, `trending` |
 | **Macro and markets** | | |
 | `fred`    | St. Louis Fed FRED                                                     | `observations`, `series_info`, `search`, `release_dates` |
+| `fama_french` | Kenneth French Data Library (no key)                          | `factors` (monthly/daily Mkt-RF, SMB, HML, RF, mkt) |
 | `cftc`    | CFTC Commitments of Traders (legacy, disaggregated, TFF)               | `cot`, `markets` |
 | `coingecko` | CoinGecko API v3 (no key needed)                                     | `markets`, `market_chart`, `ohlc`, `trending`, `global_metrics` |
 
@@ -50,7 +51,7 @@ API keys, all read from env vars. Vendors not listed need nothing.
 | Vendor | Env vars | Required? |
 |--------|----------|-----------|
 | `eia` | `EIA_API_KEY` | yes (free) |
-| `fred` | `FRED_API_KEY` | yes (free) |
+| `fred` | `FRED_API_KEY` | only for `series_info`, `search`, `release_dates`; `observations` falls back to the keyless CSV (current vintage) |
 | `nasa_firms` | `FIRMS_MAP_KEY` | yes (free) |
 | `aisstream` | `AISSTREAM_API_KEY` | yes (free) |
 | `copernicus` | `CDSE_USERNAME`, `CDSE_PASSWORD` | only for `download` |

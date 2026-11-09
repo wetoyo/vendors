@@ -1,11 +1,14 @@
 """St. Louis Fed FRED API (economic time series).
 
 Set ``FRED_API_KEY`` (free at https://fred.stlouisfed.org/docs/api/api_key.html).
+Without a key, ``observations`` falls back to the public fredgraph CSV download
+(current vintage only, so ``realtime_start``/``realtime_end`` are empty).
 ``observations`` and ``series_info`` take ``series_ids`` or a ``preset`` name (see PRESETS).
 """
 
 from __future__ import annotations
 
+import io
 import os
 from collections.abc import Sequence
 from datetime import date, timedelta
@@ -17,6 +20,7 @@ import requests
 from vendors.core import Vendor, dataset
 
 BASE_URL = "https://api.stlouisfed.org/fred"
+CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 PAGE = 1000  # max page size for /series/search
 
 PRESETS: dict[str, list[str]] = {
@@ -51,6 +55,22 @@ def get(path: str, **params) -> dict:
     r = requests.get(f"{BASE_URL}/{path.lstrip('/')}", params=params, timeout=30)
     r.raise_for_status()
     return r.json()
+
+
+def has_api_key() -> bool:
+    return bool(os.environ.get("FRED_API_KEY", "").strip())
+
+
+def csv_observations(series_id: str, start: str | None = None, end: str | None = None) -> pd.DataFrame:
+    """Keyless download of one series from fredgraph CSV, as ``date``/``value`` rows."""
+    r = requests.get(CSV_URL, params={"id": series_id, "cosd": start, "coed": end}, timeout=60)
+    r.raise_for_status()
+    df = pd.read_csv(io.StringIO(r.text), na_values=".")
+    if df.shape[1] != 2:
+        raise ValueError(f"Unexpected fredgraph CSV for {series_id}: columns {list(df.columns)}")
+    df.columns = ["date", "value"]
+    df["value"] = pd.to_numeric(df["value"], errors="coerce")
+    return df
 
 
 def _series_ids(series_ids: Sequence[str] | str | None, preset: str | None) -> list[str]:
@@ -88,6 +108,12 @@ class FredVendor(Vendor):
         """Series observations, one row per (series_id, date); missing values are NaN."""
         frames = []
         for sid in _series_ids(series_ids, preset):
+            if not has_api_key():
+                df = csv_observations(sid, start, end)
+                df.insert(0, "series_id", sid)
+                df["realtime_start"] = df["realtime_end"] = None
+                frames.append(df)
+                continue
             obs = get(
                 "series/observations", series_id=sid, observation_start=start, observation_end=end
             ).get("observations", [])
